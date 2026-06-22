@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --accent: #e8c84a;
+  --bg: #0e0f11;
+  --panel: #16181c;
+  --border: #2a2d35;
+  --muted: #6b7080;
+  --success: #4ecb71;
+  --warn: #e87c3a;
+  --danger: #e84a4a;
+}
+
+* { font-family: 'Courier New', monospace; }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+.btn-accent {
+  @apply border border-accent text-accent px-3 py-1.5 text-xs tracking-widest
+         hover:bg-accent hover:text-surface transition-all duration-150 cursor-pointer;
+}
+.btn-muted {
+  @apply border border-border text-muted px-3 py-1.5 text-xs tracking-widest
+         hover:border-accent hover:text-accent transition-all duration-150 cursor-pointer;
+}
+.panel-section {
+  @apply border-b border-border pb-4 mb-4;
+}
+.section-label {
+  @apply text-[9px] text-muted uppercase tracking-[0.15em] mb-2 block;
+}

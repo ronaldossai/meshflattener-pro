@@ -3,14 +3,25 @@ import { useDropzone } from 'react-dropzone';
 import { STLLoader } from 'three-stdlib';
 import * as THREE from 'three';
 import { useMeshStore } from '../store/useMeshStore';
+import { useSeamStore } from '../store/useSeamStore';
+import { usePanelStore } from '../store/usePanelStore';
+import { useNestingStore } from '../store/useNestingStore';
+import { useGrainStore } from '../store/useGrainStore';
 import { computeStats, flattenGeometry, makeCushionGeometry, makeSaddleGeometry, makeCylinderGeometry } from '../geometry/flattenEngine';
+import { buildEdgeMap } from '../geometry/seamEditor';
 import { exportSVG, exportDXF } from '../exporters/exportUtils';
+import { generatePDF, downloadPDF } from '../exporters/pdfExporter';
+import SeamPanel from './SeamPanel';
+import PanelManagerPanel from './PanelManagerPanel';
+import NestingPanel from './NestingPanel';
 
 export default function Sidebar() {
   const {
-    mesh, fileName, stats, flatResult, seamAllowance, algorithm,
-    setMesh, setFlatResult, setSeamAllowance, setAlgorithm, setProcessing, isProcessing
+    mesh, fileName, stats, flatResult, seamAllowance, algorithm, activePanel,
+    setMesh, setFlatResult, setSeamAllowance, setAlgorithm, setProcessing, isProcessing, setActivePanel
   } = useMeshStore();
+  const { layout } = usePanelStore();
+  const { result: nestingResult } = useNestingStore();
 
   const processGeometry = useCallback((geo: THREE.BufferGeometry, name: string) => {
     setProcessing(true);
@@ -21,6 +32,13 @@ export default function Sidebar() {
         setMesh(geo, name, s);
         const result = flattenGeometry(geo, algorithm);
         setFlatResult(result);
+
+        // New mesh invalidates any prior seam/panel/nesting/grain state
+        const edgeMap = buildEdgeMap(geo);
+        useSeamStore.setState({ edgeMap, seamPaths: [], pendingStart: null, pendingPreview: [], mode: 'view' });
+        usePanelStore.setState({ layout: null, selectedPanelId: null });
+        useNestingStore.setState({ result: null });
+        useGrainStore.setState({ grainAngles: new Map() });
       } finally {
         setProcessing(false);
       }
@@ -81,6 +99,12 @@ export default function Sidebar() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href=url; a.download='pattern.dxf'; a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleExportPDF = () => {
+    if (!layout) return;
+    const pdf = generatePDF(layout.panels, seamAllowance, nestingResult ?? undefined);
+    if (pdf) downloadPDF(pdf, `${fileName.replace(/\.[^.]+$/, '') || 'patterns'}.pdf`);
   };
 
   const SectionLabel = ({ text }: { text: string }) => (
@@ -175,14 +199,45 @@ export default function Sidebar() {
           </div>
         )}
 
+        {/* Stage-specific tools */}
+        {mesh && activePanel === '3d' && (
+          <div className="panel-section">
+            <SectionLabel text="Seam Editor" />
+            <SeamPanel onReflatten={() => setActivePanel('flat')} />
+          </div>
+        )}
+
+        {mesh && activePanel === 'panels' && (
+          <div className="panel-section">
+            <SectionLabel text="Panel Manager" />
+            <PanelManagerPanel />
+          </div>
+        )}
+
+        {mesh && activePanel === 'nesting' && (
+          <div className="panel-section">
+            <SectionLabel text="Nesting & Layout" />
+            <NestingPanel />
+          </div>
+        )}
+
         {/* Export */}
-        {flatResult && (
+        {flatResult && (activePanel === 'flat' || activePanel === 'distortion') && (
           <div>
             <SectionLabel text="Export" />
             <div className="flex flex-col gap-1.5">
               <button className="btn-accent" onClick={handleExportSVG}>↓ SVG Pattern</button>
               <button className="btn-accent" onClick={handleExportDXF}>↓ DXF (CNC)</button>
             </div>
+          </div>
+        )}
+
+        {activePanel === 'nesting' && layout && (
+          <div>
+            <SectionLabel text="Pattern Export" />
+            <button className="btn-accent w-full text-center" onClick={handleExportPDF}>
+              ↓ Export Pattern Set (PDF)
+            </button>
           </div>
         )}
 

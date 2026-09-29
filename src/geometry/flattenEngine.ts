@@ -214,6 +214,7 @@ export function makeCushionGeometry(res=12): THREE.BufferGeometry {
   geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
   geo.setIndex(indices);
   geo.computeVertexNormals();
+  geo.scale(180, 180, 180); // realistic mm scale (STL convention) for nesting/export
   return geo;
 }
 
@@ -232,6 +233,7 @@ export function makeSaddleGeometry(res=12): THREE.BufferGeometry {
   geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
   geo.setIndex(indices);
   geo.computeVertexNormals();
+  geo.scale(150, 150, 150); // realistic mm scale (STL convention) for nesting/export
   return geo;
 }
 
@@ -250,5 +252,6 @@ export function makeCylinderGeometry(res=20, rows=10): THREE.BufferGeometry {
   geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
   geo.setIndex(indices);
   geo.computeVertexNormals();
+  geo.scale(150, 150, 150); // realistic mm scale (STL convention) for nesting/export
   return geo;
 }

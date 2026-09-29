@@ -1,5 +1,5 @@
-import { Panel } from './panelSplitter';
-import { NestingResult, NestedItem } from './nestingOptimizer';
+import { Panel } from '../geometry/panelSplitter';
+import { NestingResult, NestedItem } from '../geometry/nestingOptimizer';
 
 // ── PDF builder (hand-crafted PDF syntax, no external lib needed) ─────────────
 // We build a valid PDF 1.4 with embedded vector paths.

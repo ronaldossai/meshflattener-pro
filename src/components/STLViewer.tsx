@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, ReactNode } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Grid, GizmoHelper, GizmoViewport } from '@react-three/drei';
 import * as THREE from 'three';
@@ -63,9 +63,10 @@ function CameraRig({ geometry }: { geometry: THREE.BufferGeometry | null }) {
 interface STLViewerProps {
   geometry: THREE.BufferGeometry | null;
   showWireframe?: boolean;
+  children?: ReactNode;
 }
 
-export default function STLViewer({ geometry, showWireframe = false }: STLViewerProps) {
+export default function STLViewer({ geometry, showWireframe = false, children }: STLViewerProps) {
   return (
     <Canvas
       shadows
@@ -109,6 +110,8 @@ export default function STLViewer({ geometry, showWireframe = false }: STLViewer
           <meshStandardMaterial color="#2a2d35" wireframe />
         </mesh>
       )}
+
+      {children}
 
       <CameraRig geometry={geometry} />
       <OrbitControls

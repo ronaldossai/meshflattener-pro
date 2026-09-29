@@ -20,7 +20,7 @@ interface MeshState {
   flatResult: FlatResult | null;
   seamAllowance: number;
   algorithm: 'ARAP' | 'LSCM' | 'Projection';
-  activePanel: '3d' | 'flat' | 'distortion';
+  activePanel: '3d' | 'flat' | 'distortion' | 'panels' | 'nesting';
   isProcessing: boolean;
   setMesh: (mesh: THREE.BufferGeometry, name: string, stats: MeshStats) => void;
   setFlatResult: (result: FlatResult) => void;

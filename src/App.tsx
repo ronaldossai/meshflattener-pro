@@ -1,17 +1,28 @@
-import { Suspense, useMemo } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 import STLViewer from './components/STLViewer';
 import FlatView from './components/FlatView';
 import Sidebar from './components/Sidebar';
+import MultiPanelView from './components/MultiPanelView';
+import NestingView from './components/NestingView';
+import EdgePickLayer, { SeamLinesOverlay } from './components/SeamEditorOverlay';
+import PanelColorOverlay from './components/PanelColorOverlay';
 import { useMeshStore } from './store/useMeshStore';
+import { usePanelStore } from './store/usePanelStore';
+import { useNestingStore } from './store/useNestingStore';
 
 const tabs = [
-  { id: '3d', label: '3D VIEW' },
+  { id: '3d', label: '1 · PREPARE' },
   { id: 'flat', label: 'FLAT PATTERN' },
   { id: 'distortion', label: 'DISTORTION MAP' },
+  { id: 'panels', label: '2 · PANELS' },
+  { id: 'nesting', label: '3 · NEST & EXPORT' },
 ] as const;
 
 export default function App() {
   const { mesh, flatResult, activePanel, setActivePanel, stats, seamAllowance, fileName } = useMeshStore();
+  const { layout } = usePanelStore();
+  const { result: nestingResult } = useNestingStore();
+  const [panelsMode, setPanelsMode] = useState<'flat' | 'distortion'>('flat');
 
   const faces = useMemo(() => {
     if (!mesh) return [];
@@ -72,7 +83,7 @@ export default function App() {
             ))}
 
             <div className="ml-auto flex gap-3 text-[10px] text-muted">
-              {flatResult && activePanel !== '3d' && (
+              {flatResult && (activePanel === 'flat' || activePanel === 'distortion') && (
                 <span className="text-success">✓ Flattened</span>
               )}
               {activePanel === '3d' && <span>Orbit: Left drag · Zoom: Scroll · Pan: Right drag</span>}
@@ -92,7 +103,7 @@ export default function App() {
               </div>
             )}
 
-            {/* 3D View */}
+            {/* 3D View: prepare & seam editing */}
             {activePanel === '3d' && (
               <div className="absolute inset-0">
                 <Suspense fallback={
@@ -100,7 +111,11 @@ export default function App() {
                     Loading 3D engine…
                   </div>
                 }>
-                  <STLViewer geometry={mesh} />
+                  <STLViewer geometry={mesh}>
+                    <EdgePickLayer />
+                    <SeamLinesOverlay />
+                    <PanelColorOverlay />
+                  </STLViewer>
                 </Suspense>
               </div>
             )}
@@ -122,6 +137,50 @@ export default function App() {
             {(activePanel === 'flat' || activePanel === 'distortion') && !flatResult && mesh && (
               <div className="absolute inset-0 flex items-center justify-center text-muted text-sm tracking-wider animate-pulse">
                 FLATTENING…
+              </div>
+            )}
+
+            {/* Panels view: per-piece flatten results */}
+            {activePanel === 'panels' && (
+              <div className="absolute inset-0">
+                {layout && layout.panels.length > 0 ? (
+                  <>
+                    <div className="absolute top-3 right-3 z-10 flex gap-1 bg-panel/80 border border-border rounded p-1">
+                      {(['flat', 'distortion'] as const).map(m => (
+                        <button
+                          key={m}
+                          onClick={() => setPanelsMode(m)}
+                          className={`px-3 py-1 text-[10px] tracking-wider rounded transition-all
+                            ${panelsMode === m ? 'bg-accent/20 text-accent' : 'text-muted hover:text-white'}`}
+                        >
+                          {m.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
+                    <MultiPanelView panels={layout.panels} seamAllowance={seamAllowance} mode={panelsMode} />
+                  </>
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-muted">
+                    <div className="text-6xl opacity-20">⬡</div>
+                    <p className="text-sm tracking-widest uppercase opacity-40">No panels yet</p>
+                    <p className="text-[11px] opacity-30">Place seams in Prepare, then split in the Panel Manager</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Nesting view: sheet layout & export */}
+            {activePanel === 'nesting' && (
+              <div className="absolute inset-0">
+                {nestingResult ? (
+                  <NestingView result={nestingResult} />
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-muted">
+                    <div className="text-6xl opacity-20">⬡</div>
+                    <p className="text-sm tracking-widest uppercase opacity-40">No layout yet</p>
+                    <p className="text-[11px] opacity-30">Run the nesting optimizer in the sidebar</p>
+                  </div>
+                )}
               </div>
             )}
           </div>
